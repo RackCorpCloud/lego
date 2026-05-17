@@ -20,7 +20,7 @@ import (
 const (
 	envNamespace = "RACKCORP_"
 
-	EnvBaseURL   = envNamespace + "BASE_URL"
+	EnvAPIURL    = envNamespace + "API_URL"
 	EnvAPIUUID   = envNamespace + "API_UUID"
 	EnvAPISecret = envNamespace + "API_SECRET"
 
@@ -34,7 +34,7 @@ var _ challenge.ProviderTimeout = (*DNSProvider)(nil)
 
 // Config is used to configure the creation of the DNSProvider.
 type Config struct {
-	BaseURL            string
+	URL                string
 	APIUUID            string
 	APISecret          string
 	PropagationTimeout time.Duration
@@ -46,7 +46,7 @@ type Config struct {
 // NewDefaultConfig returns a default configuration for the DNSProvider.
 func NewDefaultConfig() *Config {
 	return &Config{
-		BaseURL:            env.GetOrDefaultString(EnvBaseURL, internal.DefaultURL),
+		URL:                env.GetOrDefaultString(EnvAPIURL, internal.DefaultURL),
 		APIUUID:            env.GetOrDefaultString(EnvAPIUUID, ""),
 		APISecret:          env.GetOrDefaultString(EnvAPISecret, ""),
 		TTL:                env.GetOrDefaultInt(EnvTTL, dns01.DefaultTTL),
@@ -81,7 +81,7 @@ func NewDNSProviderConfig(config *Config) (*DNSProvider, error) {
 	}
 
 	client := internal.NewRCClient(clientdebug.Wrap(config.HTTPClient),
-		config.BaseURL,
+		config.URL,
 		config.APIUUID,
 		config.APISecret,
 		useragent.Get(),

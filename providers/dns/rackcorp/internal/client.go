@@ -32,19 +32,19 @@ const recordTypeTXT = "TXT"
 
 type dnsDomainGetResponse struct {
 	response
-	Data DNSDomain `json:"data"`
+	DNSDomain
 }
 
 type dnsDomainGetAllResponse struct {
 	response
-	Data []DNSDomain `json:"data"`
+	Domains map[string]DNSDomain `json:"domains"`
 }
 
-const DefaultURL = "https://api.rackcorp.com/api/rest/v2.9/json.php"
+const DefaultURL = "https://api.rackcorp.net/api/rest/v2.9/json.php"
 
 type RCClient struct {
 	client    *http.Client
-	url       string
+	URL       string
 	apiUUID   string
 	apiSecret string
 	userAgent string
@@ -53,7 +53,7 @@ type RCClient struct {
 func NewRCClient(client *http.Client, url, apiUUID, apiSecret, userAgent string) *RCClient {
 	return &RCClient{
 		client:    client,
-		url:       url,
+		URL:       url,
 		apiUUID:   apiUUID,
 		apiSecret: apiSecret,
 		userAgent: userAgent,
@@ -68,7 +68,7 @@ func (c *RCClient) apiReq(payload map[string]any) (*http.Response, error) {
 
 	req, err := http.NewRequest(
 		http.MethodPost,
-		c.url,
+		c.URL,
 		bytes.NewReader(reqBodyBytes),
 	)
 	req.Header.Set("Content-Type", "application/json")
@@ -97,7 +97,7 @@ func doApi[T any](c *RCClient, payload map[string]any, result *T) error {
 	return err
 }
 
-func (c *RCClient) DNSDomainGetAll() ([]DNSDomain, error) {
+func (c *RCClient) DNSDomainGetAll() (map[string]DNSDomain, error) {
 	reqPayload := map[string]any{
 		"cmd": "dns.domain.getall",
 	}
@@ -112,7 +112,7 @@ func (c *RCClient) DNSDomainGetAll() ([]DNSDomain, error) {
 		return nil, fmt.Errorf("api error: %s", apiResp.Message)
 	}
 
-	return apiResp.Data, nil
+	return apiResp.Domains, nil
 }
 
 func (c *RCClient) DNSDomainGet(domainID json.Number) (*DNSDomain, error) {
@@ -131,7 +131,7 @@ func (c *RCClient) DNSDomainGet(domainID json.Number) (*DNSDomain, error) {
 		return nil, fmt.Errorf("api error: %s", apiResp.Message)
 	}
 
-	return &apiResp.Data, nil
+	return &apiResp.DNSDomain, nil
 }
 
 func (c *RCClient) DNSRecordCreateTXT(domainID json.Number, lookup, data string, ttl int) error {
@@ -204,7 +204,7 @@ func (c *RCClient) DNSRecordDelete(recordID json.Number) error {
 	return nil
 }
 
-func FindDomain(domains []DNSDomain, domainName string) *DNSDomain {
+func FindDomain(domains map[string]DNSDomain, domainName string) *DNSDomain {
 	for _, domain := range domains {
 		if domain.Name == domainName {
 			return &domain
