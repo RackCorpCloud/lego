@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-acme/lego/v5/challenge"
 	"github.com/go-acme/lego/v5/challenge/dns01"
+	"github.com/go-acme/lego/v5/internal/useragent"
 	"github.com/go-acme/lego/v5/platform/env"
 	"github.com/go-acme/lego/v5/providers/dns/internal/clientdebug"
 	"github.com/go-acme/lego/v5/providers/dns/rackcorp/internal"
@@ -19,6 +20,7 @@ import (
 const (
 	envNamespace = "RACKCORP_"
 
+	EnvBaseURL   = envNamespace + "BASE_URL"
 	EnvAPIUUID   = envNamespace + "API_UUID"
 	EnvAPISecret = envNamespace + "API_SECRET"
 
@@ -32,6 +34,7 @@ var _ challenge.ProviderTimeout = (*DNSProvider)(nil)
 
 // Config is used to configure the creation of the DNSProvider.
 type Config struct {
+	BaseURL            string
 	APIUUID            string
 	APISecret          string
 	PropagationTimeout time.Duration
@@ -43,6 +46,7 @@ type Config struct {
 // NewDefaultConfig returns a default configuration for the DNSProvider.
 func NewDefaultConfig() *Config {
 	return &Config{
+		BaseURL:            env.GetOrDefaultString(EnvBaseURL, internal.DefaultURL),
 		APIUUID:            env.GetOrDefaultString(EnvAPIUUID, ""),
 		APISecret:          env.GetOrDefaultString(EnvAPISecret, ""),
 		TTL:                env.GetOrDefaultInt(EnvTTL, dns01.DefaultTTL),
@@ -76,8 +80,12 @@ func NewDNSProviderConfig(config *Config) (*DNSProvider, error) {
 		return nil, errors.New("rackcorp: API credentials are missing")
 	}
 
-	client := internal.NewRCClient(clientdebug.Wrap(config.HTTPClient))
-	//TODO client.SetUserAgent(useragent.Get())
+	client := internal.NewRCClient(clientdebug.Wrap(config.HTTPClient),
+		config.BaseURL,
+		config.APIUUID,
+		config.APISecret,
+		useragent.Get(),
+	)
 
 	return &DNSProvider{config: config, client: client}, nil
 }

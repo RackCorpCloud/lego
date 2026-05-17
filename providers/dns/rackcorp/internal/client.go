@@ -40,13 +40,23 @@ type dnsDomainGetAllResponse struct {
 	Data []DNSDomain `json:"data"`
 }
 
+const DefaultURL = "https://api.rackcorp.com/api/rest/v2.9/json.php"
+
 type RCClient struct {
-	client *http.Client
+	client    *http.Client
+	url       string
+	apiUUID   string
+	apiSecret string
+	userAgent string
 }
 
-func NewRCClient(client *http.Client) *RCClient {
+func NewRCClient(client *http.Client, url, apiUUID, apiSecret, userAgent string) *RCClient {
 	return &RCClient{
-		client: client,
+		client:    client,
+		url:       url,
+		apiUUID:   apiUUID,
+		apiSecret: apiSecret,
+		userAgent: userAgent,
 	}
 }
 
@@ -58,12 +68,13 @@ func (c *RCClient) apiReq(payload map[string]any) (*http.Response, error) {
 
 	req, err := http.NewRequest(
 		http.MethodPost,
-		"https://api.rackcorp.com/api/rest/v2.9/json.php",
+		c.url,
 		bytes.NewReader(reqBodyBytes),
 	)
 	req.Header.Set("Content-Type", "application/json")
-	// TODO auth
-	// TODO user agent
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", c.userAgent)
+	req.SetBasicAuth(c.apiUUID, c.apiSecret)
 
 	if err != nil {
 		return nil, err
