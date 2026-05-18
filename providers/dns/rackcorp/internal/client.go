@@ -13,7 +13,7 @@ type DNSRecord struct {
 	Type     string      `json:"type"`
 	Data     string      `json:"data"`
 	TTL      json.Number `json:"ttl"`
-	DomainID json.Number `json:"domainid"`
+	DomainID json.Number `json:"domainId"`
 }
 
 type DNSDomain struct {
