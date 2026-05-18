@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-acme/lego/v5/challenge"
@@ -107,7 +108,8 @@ func (d *DNSProvider) Present(ctx context.Context, domain, token, keyAuth string
 	record := internal.FindTXTRecord(zone.Records, info.Prefix)
 	if record != nil {
 		record.Data = info.Value
-		record.TTL = json.Number(fmt.Sprintf("%d", d.config.TTL))
+		record.TTL = json.Number(strconv.Itoa(d.config.TTL))
+
 		return d.client.DNSRecordUpdate(*record)
 	}
 

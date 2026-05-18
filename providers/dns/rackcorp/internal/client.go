@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 type DNSRecord struct {
@@ -27,8 +28,10 @@ type response struct {
 	Message string `json:"message"`
 }
 
-const responseCodeOK = "OK"
-const recordTypeTXT = "TXT"
+const (
+	responseCodeOK = "OK"
+	recordTypeTXT  = "TXT"
+)
 
 type dnsDomainGetResponse struct {
 	response
@@ -37,6 +40,7 @@ type dnsDomainGetResponse struct {
 
 type dnsDomainGetAllResponse struct {
 	response
+
 	Domains map[string]DNSDomain `json:"domains"`
 }
 
@@ -79,21 +83,24 @@ func (c *RCClient) apiReq(payload map[string]any) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return c.client.Do(req)
 }
 
-func doApi[T any](c *RCClient, payload map[string]any, result *T) error {
+func doAPI[T any](c *RCClient, payload map[string]any, result *T) error {
 	resp, err := c.apiReq(payload)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	dec := json.NewDecoder(resp.Body)
 	err = dec.Decode(result)
+
 	return err
 }
 
@@ -103,7 +110,8 @@ func (c *RCClient) DNSDomainGetAll() (map[string]DNSDomain, error) {
 	}
 
 	var apiResp dnsDomainGetAllResponse
-	err := doApi(c, reqPayload, &apiResp)
+
+	err := doAPI(c, reqPayload, &apiResp)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +130,8 @@ func (c *RCClient) DNSDomainGet(domainID json.Number) (*DNSDomain, error) {
 	}
 
 	var apiResp dnsDomainGetResponse
-	err := doApi(c, reqPayload, &apiResp)
+
+	err := doAPI(c, reqPayload, &apiResp)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +149,7 @@ func (c *RCClient) DNSRecordCreateTXT(domainID json.Number, lookup, data string,
 		Lookup:   lookup,
 		Type:     recordTypeTXT,
 		Data:     data,
-		TTL:      json.Number(fmt.Sprintf("%d", ttl)),
+		TTL:      json.Number(strconv.Itoa(ttl)),
 		DomainID: domainID,
 	}
 
@@ -152,7 +161,8 @@ func (c *RCClient) DNSRecordCreateTXT(domainID json.Number, lookup, data string,
 	}
 
 	var apiResp response
-	err := doApi(c, reqPayload, &apiResp)
+
+	err := doAPI(c, reqPayload, &apiResp)
 	if err != nil {
 		return err
 	}
@@ -173,7 +183,8 @@ func (c *RCClient) DNSRecordUpdate(record DNSRecord) error {
 	}
 
 	var apiResp response
-	err := doApi(c, reqPayload, &apiResp)
+
+	err := doAPI(c, reqPayload, &apiResp)
 	if err != nil {
 		return err
 	}
@@ -192,7 +203,8 @@ func (c *RCClient) DNSRecordDelete(recordID json.Number) error {
 	}
 
 	var apiResp response
-	err := doApi(c, reqPayload, &apiResp)
+
+	err := doAPI(c, reqPayload, &apiResp)
 	if err != nil {
 		return err
 	}
@@ -210,6 +222,7 @@ func FindDomain(domains map[string]DNSDomain, domainName string) *DNSDomain {
 			return &domain
 		}
 	}
+
 	return nil
 }
 
@@ -219,5 +232,6 @@ func FindTXTRecord(records []DNSRecord, lookup string) *DNSRecord {
 			return &record
 		}
 	}
+
 	return nil
 }
